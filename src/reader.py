@@ -27,6 +27,8 @@ def read_las(path):
         "x": np.asarray(las.x),
         "y": np.asarray(las.y),
         "z": np.asarray(las.z),
+        "classification": np.asarray(las.classification),
+        "number_of_returns": np.asarray(las.number_of_returns),
     }
 
 
@@ -45,6 +47,26 @@ def get_field_size(cloud):
     return breite, hoehe
 
 
+def write_las(cloud, path, classification=None):
+    """
+    Schreibt ein cloud-dict (x, y, z, classification) als LAS-Datei.
+    Mit classification=5 werden alle Punkte einheitlich als Klasse 5 geschrieben.
+    """
+    header = laspy.LasHeader(point_format=6, version="1.4")
+    header.offsets = np.array([cloud["x"].min(), cloud["y"].min(), cloud["z"].min()])
+    header.scales = np.array([0.001, 0.001, 0.001])
+
+    las = laspy.LasData(header=header)
+    las.x = cloud["x"]
+    las.y = cloud["y"]
+    las.z = cloud["z"]
+    if classification is not None:
+        las.classification = np.full(len(cloud["x"]), classification, dtype=np.uint8)
+    else:
+        las.classification = cloud["classification"].astype(np.uint8)
+    las.write(path)
+
+
 def read_all(data_dir=None):
     """
     Liest alle .las-Dateien in data_dir (Standard: ../data).
@@ -56,6 +78,7 @@ def read_all(data_dir=None):
 
 if __name__ == "__main__":
     data = read_all()
+    print(data)
     for name, cloud in data.items():
         z = cloud["z"]
         w, h = get_field_size(cloud)
