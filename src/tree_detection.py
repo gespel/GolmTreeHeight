@@ -80,7 +80,6 @@ def make_chm(cloud, resolution=1.0):
         )
         dtm = _fill_nan(dtm)
     else:
-        # Kein/kaum Klassifikation: Minimum Z pro Zelle + morphologische Erosion
         # Der tiefste Punkt in einem ~10m-Fenster approximiert das Gelände
         dtm, _, _ = make_raster(x, y, z, resolution, np.min,
                                  x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
