@@ -52,6 +52,8 @@ def write_las(cloud, path, classification=None):
     Schreibt ein cloud-dict (x, y, z, classification) als LAS-Datei.
     Mit classification=5 werden alle Punkte einheitlich als Klasse 5 geschrieben.
     """
+    if len(cloud["x"]) == 0:
+        raise ValueError(f"write_las: leere Punktwolke — nichts zu schreiben ({path})")
     header = laspy.LasHeader(point_format=6, version="1.4")
     header.offsets = np.array([cloud["x"].min(), cloud["y"].min(), cloud["z"].min()])
     header.scales = np.array([0.001, 0.001, 0.001])

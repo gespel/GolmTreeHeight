@@ -104,31 +104,9 @@ def make_chm(cloud, resolution=1.0):
         single = (n_returns == 1).astype(float)
         sr_grid, _, _ = make_raster(x, y, single, resolution, np.mean,
                                      x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
-        chm[(sr_grid > 0.7) & (chm > 2.0)] = 0
+        chm[(sr_grid > 0.8) & (chm > 2.0)] = 0
 
     return chm, x_min, y_min, resolution
-
-
-def find_tree_tops(chm, x_min, y_min, resolution, min_height=2.0, search_radius=3.0):
-    """
-    Findet Baumspitzen als lokale Maxima im CHM.
-
-    min_height   : Mindesthöhe in Metern (filtert Boden/Strauch)
-    search_radius: Radius in Metern für lokales Maximum
-
-    Gibt ein Array mit Spalten [x, y, height] zurück.
-    """
-    window = max(3, int(2 * search_radius / resolution) | 1)  # ungerade Fenstergröße
-    local_max = maximum_filter(chm, size=window)
-    is_top = (chm == local_max) & (chm >= min_height) & ~np.isnan(chm)
-
-    rows, cols = np.where(is_top)
-    x = x_min + (cols + 0.5) * resolution
-    y = y_min + (rows + 0.5) * resolution
-    heights = chm[rows, cols]
-
-    return np.column_stack([x, y, heights])
-
 
 def filter_tree_points(cloud, chm, x_min, y_min, resolution, min_height=2.0):
     """
@@ -155,15 +133,13 @@ if __name__ == "__main__":
 
     for las_path in sorted(Path("data").glob("ALS_*.las")):
         year = las_path.stem.split("_")[1]
-        out = f"data/trees_{year}.las"
+        out = f"data/raw_trees_{year}.las"
         print(f"\n{las_path.name}...")
 
         cloud = read_las(las_path)
-        chm, x_min, y_min, res = make_chm(cloud, resolution=1.0)
-        trees = find_tree_tops(chm, x_min, y_min, res, min_height=2.0, search_radius=3.0)
+        chm, x_min, y_min, res = make_chm(cloud, resolution=0.5)
         tree_cloud = filter_tree_points(cloud, chm, x_min, y_min, res, min_height=2.0)
         write_las(tree_cloud, out, classification=5)
 
-        print(f"  Baumspitzen: {len(trees):,}")
         print(f"  Baumpunkte:  {len(tree_cloud['x']):,} von {len(cloud['x']):,}")
         print(f"  Gespeichert: {out}")
