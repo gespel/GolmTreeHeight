@@ -9,7 +9,7 @@ Ablauf:
 """
 
 import numpy as np
-from scipy.ndimage import maximum_filter, minimum_filter, distance_transform_edt
+from scipy.ndimage import maximum_filter, minimum_filter, distance_transform_edt, binary_dilation
 from mask_buildings import build_mask
 
 CLASS_GROUND = 2
@@ -93,6 +93,11 @@ def make_chm(cloud, resolution=1.0, mask=True):
     # --- Gebäude maskieren ---
     if mask:
         buildings = build_mask(n_cols, n_rows, save=False)
+
+        # Wie viele Nachbarzellen eines Gebäudes sind ebenfalls Gebäude?
+        # Eine Zelle ist nicht 100% perfekt, aber irgendwann fängt man an Bäume zu löschen.
+        buildings = binary_dilation(buildings, iterations=1)
+
         chm[buildings] = 0
 
     # Zellen mit >80% Single-Returns sind wahrscheinlich Gebäude
