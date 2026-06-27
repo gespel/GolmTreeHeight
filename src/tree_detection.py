@@ -97,13 +97,13 @@ def make_chm(cloud, resolution=1.0):
         bld_mask = np.zeros((n_rows, n_cols), bool)
         bld_mask[r_idx, c_idx] = True
         chm[bld_mask] = 0
-    else:
-        # Kein Klassifikation: Zellen mit >80% Single-Returns sind wahrscheinlich Gebäude
-        # Bäume erzeugen viele Mehrfach-Returns, flache Dächer fast nur Single-Returns
-        single = (n_returns == 1).astype(float)
-        sr_grid, _, _ = make_raster(x, y, single, resolution, np.mean,
-                                     x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
-        chm[(sr_grid > 0.8) & (chm > 2.0)] = 0
+
+    # Zellen mit >80% Single-Returns sind wahrscheinlich Gebäude
+    # Bäume erzeugen viele Mehrfach-Returns, flache Dächer fast nur Single-Returns
+    single = (n_returns == 1).astype(float)
+    sr_grid, _, _ = make_raster(x, y, single, resolution, np.mean,
+                                    x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
+    chm[(sr_grid > 0.8) & (chm > 2.0)] = 0
 
     return chm, x_min, y_min, resolution
 
