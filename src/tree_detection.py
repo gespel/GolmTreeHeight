@@ -9,7 +9,8 @@ Ablauf:
 """
 
 import numpy as np
-from scipy.ndimage import maximum_filter, minimum_filter, distance_transform_edt
+from scipy.ndimage import maximum_filter, minimum_filter, distance_transform_edt, binary_dilation
+from mask_buildings import build_mask
 
 CLASS_GROUND = 2
 CLASS_BUILDING = 6
@@ -54,7 +55,7 @@ def _fill_nan(grid):
     return grid
 
 
-def make_chm(cloud, resolution=1.0):
+def make_chm(cloud, resolution=1.0, mask=True):
     """
     Berechnet das Canopy Height Model (CHM = DSM - DTM).
     Funktioniert mit und ohne Klassifikation:
@@ -90,20 +91,21 @@ def make_chm(cloud, resolution=1.0):
     chm = np.clip(dsm - dtm, 0, None)
 
     # --- Gebäude maskieren ---
-    if (cls == CLASS_BUILDING).sum() > 0:
-        # Klassifikation verfügbar: Zellen mit Gebäudepunkten auf 0 setzen
-        c_idx = ((x[cls == CLASS_BUILDING] - x_min) / resolution).astype(int).clip(0, n_cols - 1)
-        r_idx = ((y[cls == CLASS_BUILDING] - y_min) / resolution).astype(int).clip(0, n_rows - 1)
-        bld_mask = np.zeros((n_rows, n_cols), bool)
-        bld_mask[r_idx, c_idx] = True
-        chm[bld_mask] = 0
-    else:
-        # Kein Klassifikation: Zellen mit >80% Single-Returns sind wahrscheinlich Gebäude
-        # Bäume erzeugen viele Mehrfach-Returns, flache Dächer fast nur Single-Returns
-        single = (n_returns == 1).astype(float)
-        sr_grid, _, _ = make_raster(x, y, single, resolution, np.mean,
-                                     x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
-        chm[(sr_grid > 0.8) & (chm > 2.0)] = 0
+    if mask:
+        buildings = build_mask(n_cols, n_rows, save=False)
+
+        # Wie viele Nachbarzellen eines Gebäudes sind ebenfalls Gebäude?
+        # Eine Zelle ist nicht 100% perfekt, aber irgendwann fängt man an Bäume zu löschen.
+        buildings = binary_dilation(buildings, iterations=1)
+
+        chm[buildings] = 0
+
+    # Zellen mit >80% Single-Returns sind wahrscheinlich Gebäude
+    # Bäume erzeugen viele Mehrfach-Returns, flache Dächer fast nur Single-Returns
+    single = (n_returns == 1).astype(float)
+    sr_grid, _, _ = make_raster(x, y, single, resolution, np.mean,
+                                    x_min=x_min, y_min=y_min, cols=n_cols, rows=n_rows)
+    chm[(sr_grid > 0.8) & (chm > 2.0)] = 0
 
     return chm, x_min, y_min, resolution
 
@@ -136,7 +138,8 @@ if __name__ == "__main__":
         print(f"\n{las_path.name}...")
 
         cloud = read_las(las_path)
-        chm, x_min, y_min, res = make_chm(cloud, resolution=0.5)
+        # Der 2024er Datensatz passt nicht so gut auf den 2018er wie der von 2025.
+        chm, x_min, y_min, res = make_chm(cloud, resolution=0.5, mask=year != "2024")
         tree_cloud = filter_tree_points(cloud, chm, x_min, y_min, res, min_height=2.0)
         write_las(tree_cloud, out, classification=5)
 
