@@ -18,6 +18,7 @@ Parameter-Richtwerte für mitteleuropäischen Mischwald:
 
 import numpy as np
 from pathlib import Path
+import tqdm
 from scipy.ndimage import maximum_filter, gaussian_filter, watershed_ift
 
 from tree_detection import make_chm
@@ -97,7 +98,7 @@ def segment_and_write(full_cloud, tree_cloud, out_dir, stem,
 
     written = 0
     out_id = 1
-    for raw_id in np.unique(tree_ids):
+    for raw_id in tqdm.tqdm(np.unique(tree_ids)):
         if raw_id == 0:
             continue
         mask = tree_ids == raw_id
