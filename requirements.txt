@@ -1,0 +1,5 @@
+laspy==2.7.0
+numpy==2.5.0
+pillow==12.2.0
+scipy==1.18.0
+tqdm==4.68.3
