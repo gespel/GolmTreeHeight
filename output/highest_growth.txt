@@ -1,0 +1,2 @@
+Baum mit dem größten Wachstum: 0095 -> 0144
+Wachstumswert: 6.96 m

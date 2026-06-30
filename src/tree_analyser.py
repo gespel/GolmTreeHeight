@@ -1,3 +1,5 @@
+import os
+
 from reader import read_las, write_las
 from pathlib import Path
 import numpy as np
@@ -101,6 +103,7 @@ def find_tree_with_highest_growth(tree_pairs):
         print(f"\nBaum-Paar: {tree_1_id} -> {tree_2_id}")
         print(f"Höhe Baum 1 ({tree_1_id}): {height_tree_1:.2f} m")
         print(f"Höhe Baum 2 ({tree_2_id}): {height_tree_2:.2f} m")
+        print(f"Wachstumswert: {height_tree_2 - height_tree_1:.2f} m")
 
         growth_value = height_tree_2 - height_tree_1
         all_growth_values.append(growth_value)
@@ -111,18 +114,21 @@ def find_tree_with_highest_growth(tree_pairs):
 
     print(f"\nDurchschnittliches Wachstum aller Baum-Paare: {np.mean(all_growth_values):.2f} m")
 
+    if not os.path.exists("output"):
+        os.makedirs("output", exist_ok=True)
+
     # Top 3 Bäume mit dem größten Wachstum ausgeben
     sorted_trees = sorted(growth_data, key=lambda x: x[2], reverse=True)
-    print("\n=== Top 3 Bäume mit dem größten Wachstum ===")
-    for i, (tree_1_id, tree_2_id, growth) in enumerate(sorted_trees[:3], 1):
+    print("\n=== Top 10 Bäume mit dem größten Wachstum ===")
+    for i, (tree_1_id, tree_2_id, growth) in enumerate(sorted_trees[:10], 1):
         print(f"{i}. Baum-Paar: {tree_1_id} -> {tree_2_id}, Wachstum: {growth:.2f} m")
-        with open(f"data/growth_{i}.txt", "w") as f:
+        with open(f"output/growth_{i}.txt", "w") as f:
             f.write(f"Baum-Paar: {tree_1_id} -> {tree_2_id}, Wachstum: {growth:.2f} m\n")
 
     if highest_growth_tree_pair is not None:
         print(f"\nBaum mit dem größten Wachstum: {highest_growth_tree_pair[0]} -> {highest_growth_tree_pair[1]}")
         print(f"Wachstumswert: {highest_growth_value:.2f} m")
-        with open("data/highest_growth.txt", "w") as f:
+        with open("output/highest_growth.txt", "w") as f:
             f.write(f"Baum mit dem größten Wachstum: {highest_growth_tree_pair[0]} -> {highest_growth_tree_pair[1]}\n")
             f.write(f"Wachstumswert: {highest_growth_value:.2f} m\n")
         return highest_growth_tree_pair, highest_growth_value
